@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "*.cjson": "jsonc",
+        "*.wxss": "css",
+        "*.wxs": "javascript",
+        "main.h": "c",
+        "fdcan.h": "c",
+        "user_comm.h": "c",
+        "delay.h": "c"
+    }
+}

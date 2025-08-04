@@ -93,6 +93,8 @@ void Error_Handler(void);
 #define SW_IN_S3_4_GPIO_Port GPIOF
 #define SW_IN_S2_4_Pin GPIO_PIN_9
 #define SW_IN_S2_4_GPIO_Port GPIOF
+#define SW_IN_EN_4_Pin GPIO_PIN_10
+#define SW_IN_EN_4_GPIO_Port GPIOF
 #define VOUT_5_Pin GPIO_PIN_0
 #define VOUT_5_GPIO_Port GPIOC
 #define VOUT_4_Pin GPIO_PIN_2
