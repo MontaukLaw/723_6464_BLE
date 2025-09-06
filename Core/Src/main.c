@@ -107,9 +107,9 @@ int main(void)
     MX_USART10_UART_Init();
     MX_UART4_Init();
     /* USER CODE BEGIN 2 */
-		
-	HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, GPIO_PIN_RESET);
-		
+
+    HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, GPIO_PIN_RESET);
+
     delay_init(550);
 
     init_frame_tail();
@@ -123,7 +123,7 @@ int main(void)
     {
         // uart_test();
         main_task();
-        // uart_test();	
+        // uart_test();
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */

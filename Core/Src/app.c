@@ -14,7 +14,8 @@ volatile uint16_t adc_ch = 0;
 volatile uint8_t uart_busy = 0; // UART是否忙碌
 
 __attribute__((section("dma_buffer"), aligned(32))) // uint8_t adc_dma_buffer[1000] = {0};
-uint8_t adc_dma_buffer[ADC_BUFFER_SIZE] = {0};      // 现在大小是以 word 为单位
+uint16_t adc_dma_buffer[ADC_BUFFER_SIZE] = {0};
+// uint8_t adc_dma_buffer[ADC_BUFFER_SIZE] = {0};      // 现在大小是以 word 为单位
 
 __attribute__((section("dma_buffer"), aligned(32))) // 用于存储点数据, 保存在CPU可以访问的区域
 volatile uint8_t points_data[FRAME_LEN] = {0};
@@ -73,7 +74,7 @@ void adc_data_handler(void)
     }
     else
     {
-        points_data[point_idx] = result - ZERO_VAL;
+        points_data[point_idx] = (uint8_t)result - ZERO_VAL;
     }
     // points_data[point_idx] = adc_sum / (ADC_BUFFER_SIZE - 5) -  ;
 }
@@ -141,7 +142,7 @@ void main_task(void)
     // 打开通道
     set_channel_pin(input_ch, GPIO_PIN_SET);
 
-    delay_us(5);
+    delay_us(2);
 
     // 开启ADC
     if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_dma_buffer, ADC_BUFFER_SIZE) != HAL_OK)

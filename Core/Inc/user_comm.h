@@ -29,12 +29,12 @@ typedef struct
 #define ADC_CHANNEL_NUMBER 64
 
 #define TOTAL_POINTS (INPUT_CH_NUMBER * ADC_CHANNEL_NUMBER)
-#define ADC_BUFFER_SIZE 5 // 10
+#define ADC_BUFFER_SIZE 2 // 10
 #define ADC_BUFFER_START 5
 
 #define FRAME_TAIL_LEN 4
 #define FRAME_LEN (TOTAL_POINTS + FRAME_TAIL_LEN)
 
-#define ZERO_VAL  10
+#define ZERO_VAL  45
 
 #endif
