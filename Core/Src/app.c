@@ -134,6 +134,8 @@ static void change_point_idx(void)
 
 void main_task(void)
 {
+
+    comm_handler();
     if (uart_busy)
     {
         return;

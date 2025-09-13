@@ -16,6 +16,11 @@
 #include "sys.h"
 #include "sys_dma.h"
 #include "sys_mpu.h"
+#include "comm.h"
+#include <string.h>
+#include <stdio.h>
+#define STANDARD_PROTOCAL_LEN UART_RX_BUF_LEN
+#define UART_RX_BUF_LEN 50
 
 typedef struct
 {

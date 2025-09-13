@@ -6,6 +6,8 @@
         "main.h": "c",
         "fdcan.h": "c",
         "user_comm.h": "c",
-        "delay.h": "c"
+        "delay.h": "c",
+        "sys_mpu.h": "c",
+        "memorymap.h": "c"
     }
 }
