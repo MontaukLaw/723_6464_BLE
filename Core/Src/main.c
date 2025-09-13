@@ -115,6 +115,9 @@ int main(void)
     init_frame_tail();
 
     start_uart_rx();
+
+    start_adc_dma();
+
     // 点亮GLED
     // HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, GPIO_PIN_RESET);
     /* USER CODE END 2 */
@@ -126,7 +129,9 @@ int main(void)
         // uart_test();
         // main_task();
         comm_handler();
-  			main_task();
+        main_task();
+        // main_task_adc_first();
+
         // uart_test();
         /* USER CODE END WHILE */
 

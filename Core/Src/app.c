@@ -23,6 +23,15 @@ volatile uint8_t points_data[FRAME_LEN] = {0};
 __attribute__((section("dma_buffer"), aligned(32)))
 uint8_t tx_buf[4100] = {1, 2, 3, 4, 5};
 
+void start_adc_dma(void)
+{
+    if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_dma_buffer, ADC_BUFFER_SIZE) != HAL_OK)
+    {
+        // 启动DMA失败
+        Error_Handler();
+    }
+}
+
 static void uart_send(void)
 {
     // counter++;
@@ -30,8 +39,8 @@ static void uart_send(void)
     // HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart4, tx_buf, 4100);
     HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart4, points_data, FRAME_LEN);
     uart_busy = 1;
-    // HAL_GPIO_TogglePin(FOR_TEST1_GPIO_Port, FOR_TEST1_Pin);
-    HAL_GPIO_WritePin(FOR_TEST1_GPIO_Port, FOR_TEST1_Pin, GPIO_PIN_SET);
+    HAL_GPIO_TogglePin(FOR_TEST1_GPIO_Port, FOR_TEST1_Pin);
+    // HAL_GPIO_WritePin(FOR_TEST1_GPIO_Port, FOR_TEST1_Pin, GPIO_PIN_SET);
 }
 
 void main_task_adc(void)
@@ -47,14 +56,49 @@ void main_task_adc(void)
         ;
 }
 
-// 7uS
+// 1000000 820ms
+// 做5次, 需要0.8uS
+// 10次, 需要1.6us
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
+    // static uint32_t counter = 0;
     if (hadc->Instance == ADC1)
     {
+
+        // counter++;
+        // if (counter > 1000000)
+        // {
+        //     points_data[0] = (uint8_t)counter;
+        //     HAL_UART_Transmit_DMA(&huart4, points_data, 4);
+        //     counter = 0;
+        // }
         // HAL_GPIO_TogglePin(FOR_TEST1_GPIO_Port, FOR_TEST1_Pin);
         adc_busy = 0;
     }
+}
+
+void adc_data_handler_max(void)
+{
+    // 取最大值
+    uint16_t adc_max = 0;
+    for (uint32_t i = 0; i < ADC_BUFFER_SIZE; i++)
+    {
+        if (adc_dma_buffer[i] > adc_max)
+        {
+            adc_max = adc_dma_buffer[i];
+        }
+    }
+
+    if (adc_max <= ZERO_VAL)
+    {
+        points_data[point_idx] = 0;
+    }
+    else
+    {
+        points_data[point_idx] = (uint8_t)(adc_max - ZERO_VAL);
+    }
+
+    // points_data[point_idx] = (uint8_t)adc_max;
 }
 
 void adc_data_handler(void)
@@ -76,6 +120,7 @@ void adc_data_handler(void)
     {
         points_data[point_idx] = (uint8_t)result - ZERO_VAL;
     }
+    // points_data[point_idx] = (uint8_t)result;
     // points_data[point_idx] = adc_sum / (ADC_BUFFER_SIZE - 5) -  ;
 }
 
@@ -132,34 +177,82 @@ static void change_point_idx(void)
     }
 }
 
+void main_task_adc_first(void)
+{
+    uint16_t input_idx = 0;
+    uint16_t adc_idx = 0;
+    uint16_t point_nmb = 0;
+
+    for (input_idx = 0; input_idx < INPUT_CH_NUMBER; input_idx++)
+    {
+        // 打开通道
+        set_channel_pin(input_idx, GPIO_PIN_SET);
+
+        for (adc_idx = 0; adc_idx < ADC_CHANNEL_NUMBER; adc_idx++)
+        {
+
+            point_nmb = input_idx * ADC_CHANNEL_NUMBER + adc_idx;
+
+            // 切换adc通道
+            set_adc_ch(adc_idx);
+
+            // 1.6us可以做10次adc了
+            delay_us(10);
+
+            // 取最大值
+            uint16_t adc_max = 0;
+            for (uint32_t i = 0; i < ADC_BUFFER_SIZE; i++)
+            {
+                if (adc_dma_buffer[i] > adc_max)
+                {
+                    adc_max = adc_dma_buffer[i];
+                }
+            }
+
+            if (adc_max <= ZERO_VAL)
+            {
+                points_data[point_nmb] = 0;
+            }
+            else
+            {
+                points_data[point_nmb] = (uint8_t)(adc_max - ZERO_VAL);
+            }
+
+            point_nmb++;
+        }
+
+        // 关闭通道
+        set_channel_pin(input_idx, GPIO_PIN_RESET);
+    }
+
+    // 发送数据
+    uart_send();
+}
+
 void main_task(void)
 {
-
-    comm_handler();
-    if (uart_busy)
-    {
-        return;
-    }
 
     // 打开通道
     set_channel_pin(input_ch, GPIO_PIN_SET);
 
-    delay_us(2);
+    // 1.6us可以做10次adc了
+    delay_us(5);
 
-    // 开启ADC
-    if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_dma_buffer, ADC_BUFFER_SIZE) != HAL_OK)
-    {
-        // 启动DMA失败
-        Error_Handler();
-    }
+    // // 开启ADC
+    // if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_dma_buffer, ADC_BUFFER_SIZE) != HAL_OK)
+    // {
+    //     // 启动DMA失败
+    //     Error_Handler();
+    // }
 
-    adc_busy = 1;
-    while (adc_busy)
-        ;
+    // adc_busy = 1;
+    // while (adc_busy)
+    //     ;
     // 关闭通道
     set_channel_pin(input_ch, GPIO_PIN_RESET);
 
-    adc_data_handler();
+    // adc_data_handler();
+    adc_data_handler_max();
 
     // 切换输入gpio, 这样速度最快
     change_input_ch();
@@ -210,13 +303,13 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     if (huart->Instance == USART1)
     {
         // HAL_GPIO_TogglePin(FOR_TEST1_GPIO_Port, FOR_TEST1_Pin);
-        HAL_GPIO_WritePin(FOR_TEST1_GPIO_Port, FOR_TEST1_Pin, GPIO_PIN_RESET);
+        // HAL_GPIO_WritePin(FOR_TEST1_GPIO_Port, FOR_TEST1_Pin, GPIO_PIN_RESET);
         uart_busy = 0; // UART发送完成
     }
     else if (huart->Instance == UART4)
     {
         uart_busy = 0; // UART发送完成
-        HAL_GPIO_WritePin(FOR_TEST1_GPIO_Port, FOR_TEST1_Pin, GPIO_PIN_RESET);
+        // HAL_GPIO_WritePin(FOR_TEST1_GPIO_Port, FOR_TEST1_Pin, GPIO_PIN_RESET);
         // SCB_CleanDCache_by_Addr((uint32_t *)points_data, FRAME_LEN);
     }
 }

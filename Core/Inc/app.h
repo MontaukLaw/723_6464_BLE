@@ -9,4 +9,8 @@ void uart_test(void);
 
 void init_frame_tail(void);
 
+void start_adc_dma(void);
+
+void main_task_adc_first(void);
+
 #endif
