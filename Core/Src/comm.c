@@ -54,15 +54,22 @@ void comm_handler(void)
         {
             if (uart4_rx_buf[0] == 'A' && uart4_rx_buf[1] == 'T')
             {
+                while (uart_busy)
+                    ;
                 // uart4_tx_buf[0] = 'O';
                 // uart4_tx_buf[1] = 'K';
                 // uart4_tx_buf[2] = '\r';
                 // uart4_tx_buf[3] = '\n';
                 // sprintf((char *)uart4_tx_buf, "HC32F460 Unique ID:344637301550321299--Versions:%x -- company: JQ\r\n", HARDWARE_VERSION);
+
                 sprintf((char *)uart4_tx_buf, "STM32H723 Unique ID:%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X -- Versions:%04x -- company: JQ\r\n",
                         src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7], src[8], src[9], src[10], src[11],
                         HARDWARE_VERSION);
-                HAL_UART_Transmit_DMA(&huart4, uart4_tx_buf, strlen((char *)uart4_tx_buf));
+                uart_busy = 1;
+                if (HAL_UART_Transmit_DMA(&huart4, (uint8_t *)uart4_tx_buf, strlen((char *)uart4_tx_buf)) != HAL_OK)
+                {
+                    uart_busy = 0;
+                }
                 // HAL_UART_Transmit_DMA(&huart4, uart4_tx_buf, 4);
             }
         }

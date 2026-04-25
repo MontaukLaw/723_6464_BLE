@@ -22,7 +22,6 @@
 #include "dma.h"
 #include "fdcan.h"
 #include "i2c.h"
-#include "memorymap.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -80,6 +79,14 @@ int main(void)
     /* MPU Configuration--------------------------------------------------------*/
     MPU_Config();
 
+    /* Enable the CPU Cache */
+
+    /* Enable I-Cache---------------------------------------------------------*/
+    SCB_EnableICache();
+
+    /* Enable D-Cache---------------------------------------------------------*/
+    SCB_EnableDCache();
+
     /* MCU Configuration--------------------------------------------------------*/
 
     /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -103,14 +110,13 @@ int main(void)
     MX_USART1_UART_Init();
     MX_FDCAN2_Init();
     MX_I2C1_Init();
-    MX_USART6_UART_Init();
     MX_USART10_UART_Init();
     MX_UART4_Init();
     /* USER CODE BEGIN 2 */
 
     HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, GPIO_PIN_RESET);
 
-    delay_init(550);
+    delay_init(SystemCoreClock / 1000000);
 
     init_frame_tail();
 
@@ -126,11 +132,10 @@ int main(void)
     /* USER CODE BEGIN WHILE */
     while (1)
     {
-        // uart_test();
-        // main_task();
+        
         comm_handler();
-        main_task();
-        // main_task_adc_first();
+       
+        main_task_adc_first();
 
         // uart_test();
         /* USER CODE END WHILE */
@@ -200,52 +205,11 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-void MPU_Config(void)
-{
-    MPU_Region_InitTypeDef MPU_InitStruct = {0};
-
-    /* Disable the MPU */
-    HAL_MPU_Disable();
-
-    /* Region 0: Set whole memory space as NO_ACCESS (default fallback) */
-    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-    MPU_InitStruct.Number = MPU_REGION_NUMBER0;
-    MPU_InitStruct.BaseAddress = 0x00000000;
-    MPU_InitStruct.Size = MPU_REGION_SIZE_4GB;
-    MPU_InitStruct.SubRegionDisable = 0x87;
-    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-    MPU_InitStruct.AccessPermission = MPU_REGION_NO_ACCESS;
-    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-    MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
-    MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-    MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-
-    HAL_MPU_ConfigRegion(&MPU_InitStruct);
-
-    /* Region 1: Configure 0x30000000~ for DMA buffers (Non-cacheable) */
-    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-    MPU_InitStruct.Number = MPU_REGION_NUMBER1;
-    MPU_InitStruct.BaseAddress = 0x30000000;
-    MPU_InitStruct.Size = MPU_REGION_SIZE_128KB; // 或者根据需要换成 256KB、512KB
-    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-    MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
-    MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-    MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
-    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-    MPU_InitStruct.SubRegionDisable = 0x00;
-    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-
-    HAL_MPU_ConfigRegion(&MPU_InitStruct);
-
-    /* Enable the MPU */
-    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
-}
 /* USER CODE END 4 */
 
 /* MPU Configuration */
 
-void MPU_Config_(void)
+void MPU_Config(void)
 {
     MPU_Region_InitTypeDef MPU_InitStruct = {0};
 
@@ -267,6 +231,17 @@ void MPU_Config_(void)
     MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 
     HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+    /** Initializes and configures the Region and the memory to be protected
+     */
+    MPU_InitStruct.Number = MPU_REGION_NUMBER1;
+    MPU_InitStruct.BaseAddress = 0x30000000;
+    MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
+    MPU_InitStruct.SubRegionDisable = 0x0;
+    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+    MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+
+    HAL_MPU_ConfigRegion(&MPU_InitStruct);
     /* Enables the MPU */
     HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
@@ -285,7 +260,6 @@ void Error_Handler(void)
     }
     /* USER CODE END Error_Handler_Debug */
 }
-
 #ifdef USE_FULL_ASSERT
 /**
  * @brief  Reports the name of the source file and the source line number

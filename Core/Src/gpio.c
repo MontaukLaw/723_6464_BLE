@@ -93,7 +93,7 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOG, VOUT_21_Pin|VOUT_22_Pin|VOUT_46_Pin|VOUT_47_Pin
                           |VOUT_48_Pin|VOUT_49_Pin|VOUT_50_Pin|VOUT_51_Pin
-                          |VOUT_52_Pin, GPIO_PIN_RESET);
+                          |VOUT_52_Pin|TEST1_Pin|TEST2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, VOUT_38_Pin|VOUT_39_Pin|VOUT_40_Pin|VOUT_41_Pin
@@ -174,10 +174,10 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : VOUT_21_Pin VOUT_22_Pin VOUT_46_Pin VOUT_47_Pin
                            VOUT_48_Pin VOUT_49_Pin VOUT_50_Pin VOUT_51_Pin
-                           VOUT_52_Pin */
+                           VOUT_52_Pin TEST1_Pin TEST2_Pin */
   GPIO_InitStruct.Pin = VOUT_21_Pin|VOUT_22_Pin|VOUT_46_Pin|VOUT_47_Pin
                           |VOUT_48_Pin|VOUT_49_Pin|VOUT_50_Pin|VOUT_51_Pin
-                          |VOUT_52_Pin;
+                          |VOUT_52_Pin|TEST1_Pin|TEST2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -202,8 +202,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(KEY_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PG10 PG13 PG15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_13|GPIO_PIN_15;
+  /*Configure GPIO pins : PG13 PG14 PG15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);

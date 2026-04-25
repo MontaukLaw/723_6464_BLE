@@ -13,4 +13,6 @@ void start_adc_dma(void);
 
 void main_task_adc_first(void);
 
+extern volatile uint8_t uart_busy;
+
 #endif

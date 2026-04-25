@@ -6,7 +6,6 @@
 #include "dma.h"
 #include "fdcan.h"
 #include "i2c.h"
-#include "memorymap.h"
 #include "usart.h"
 #include "gpio.h"
 #include "app.h"
@@ -19,6 +18,8 @@
 #include "comm.h"
 #include <string.h>
 #include <stdio.h>
+#include "led.h"
+
 #define STANDARD_PROTOCAL_LEN UART_RX_BUF_LEN
 #define UART_RX_BUF_LEN 50
 
@@ -34,8 +35,9 @@ typedef struct
 #define ADC_CHANNEL_NUMBER 64
 
 #define TOTAL_POINTS (INPUT_CH_NUMBER * ADC_CHANNEL_NUMBER)
-#define ADC_BUFFER_SIZE 10
+#define ADC_BUFFER_SIZE 4
 #define ADC_BUFFER_START 5
+#define ADC_SETTLE_NS 650U
 
 #define FRAME_TAIL_LEN 4
 #define FRAME_LEN (TOTAL_POINTS + FRAME_TAIL_LEN)

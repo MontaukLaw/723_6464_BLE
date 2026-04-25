@@ -10,82 +10,117 @@ const GPIO_Channel channels[64] = {
     CH_DEF(48), CH_DEF(49), CH_DEF(50), CH_DEF(51), CH_DEF(52), CH_DEF(53), CH_DEF(54), CH_DEF(55),
     CH_DEF(56), CH_DEF(57), CH_DEF(58), CH_DEF(59), CH_DEF(60), CH_DEF(61), CH_DEF(62), CH_DEF(63)};
 
+static inline void gpio_write_pin_fast(GPIO_TypeDef *port, uint16_t pin, GPIO_PinState pin_status)
+{
+    port->BSRR = (pin_status == GPIO_PIN_SET) ? pin : ((uint32_t)pin << 16U);
+}
+
 void set_channel_pin(uint8_t ch, GPIO_PinState pin_status)
 {
     if (ch < sizeof(channels) / sizeof(channels[0]))
     {
-        HAL_GPIO_WritePin(channels[ch].port, channels[ch].pin, pin_status);
+        gpio_write_pin_fast(channels[ch].port, channels[ch].pin, pin_status);
     }
+}
+
+void turn_gpio_to_input(GPIO_Channel channel)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    GPIO_InitStruct.Pin = channel.pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(channel.port, &GPIO_InitStruct);
 }
 
 void turn_on_input_ch(uint8_t input_ch)
 {
+    // 设置所有通道为模拟输入
+    uint8_t i;
+    for (i = 0; i < INPUT_CH_NUMBER; i++)
+    {
+        turn_gpio_to_input(channels[i]);
+    }
 
-    static uint16_t last_ch = 0;
+    // 设置指定通道为输出
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = channels[input_ch].pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    HAL_GPIO_Init(channels[input_ch].port, &GPIO_InitStruct);
 
-    // 关闭上一个通道
-    set_channel_pin(last_ch, GPIO_PIN_RESET);
-
-    // 打开下一个通道
+    // 打开指定通道
     set_channel_pin(input_ch, GPIO_PIN_SET);
+}
 
-    last_ch = input_ch;
+void turn_off_input_ch(uint8_t input_ch)
+{
+
+    // 关闭指定通道
+    set_channel_pin(input_ch, GPIO_PIN_RESET);
+
+    // 设置指定通道为模拟输入
+    turn_gpio_to_input(channels[input_ch]);
 }
 
 static void close_all_adc_ch(void)
 {
-    HAL_GPIO_WritePin(SW_IN_EN_1_GPIO_Port, SW_IN_EN_1_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SW_IN_EN_2_GPIO_Port, SW_IN_EN_2_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SW_IN_EN_3_GPIO_Port, SW_IN_EN_3_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SW_IN_EN_4_GPIO_Port, SW_IN_EN_4_Pin, GPIO_PIN_SET);
+    gpio_write_pin_fast(SW_IN_EN_1_GPIO_Port, SW_IN_EN_1_Pin, GPIO_PIN_SET);
+    gpio_write_pin_fast(SW_IN_EN_2_GPIO_Port, SW_IN_EN_2_Pin, GPIO_PIN_SET);
+    gpio_write_pin_fast(SW_IN_EN_3_GPIO_Port, SW_IN_EN_3_Pin, GPIO_PIN_SET);
+    gpio_write_pin_fast(SW_IN_EN_4_GPIO_Port, SW_IN_EN_4_Pin, GPIO_PIN_SET);
 }
 
 void set_adc_ch(uint8_t adc_ch)
 {
-    close_all_adc_ch();
+    // close_all_adc_ch();
 
     uint16_t adc_ch_idx = adc_ch % 16;
 
     if (adc_ch < 16)
     {
-        HAL_GPIO_WritePin(SW_IN_EN_1_GPIO_Port, SW_IN_EN_1_Pin, GPIO_PIN_RESET);
         // SW_IN_S0_1_GPIO_Port
-        HAL_GPIO_WritePin(SW_IN_S0_1_GPIO_Port, SW_IN_S0_1_Pin, (adc_ch_idx & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S1_1_GPIO_Port, SW_IN_S1_1_Pin, (adc_ch_idx & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S2_1_GPIO_Port, SW_IN_S2_1_Pin, (adc_ch_idx & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S3_1_GPIO_Port, SW_IN_S3_1_Pin, (adc_ch_idx & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S0_1_GPIO_Port, SW_IN_S0_1_Pin, (adc_ch_idx & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S1_1_GPIO_Port, SW_IN_S1_1_Pin, (adc_ch_idx & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S2_1_GPIO_Port, SW_IN_S2_1_Pin, (adc_ch_idx & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S3_1_GPIO_Port, SW_IN_S3_1_Pin, (adc_ch_idx & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+       
+        gpio_write_pin_fast(SW_IN_EN_1_GPIO_Port, SW_IN_EN_1_Pin, GPIO_PIN_RESET);
     }
     else if (adc_ch < 32)
     {
         // adc_ch_idx = 16 - adc_ch_idx;
-        HAL_GPIO_WritePin(SW_IN_EN_2_GPIO_Port, SW_IN_EN_2_Pin, GPIO_PIN_RESET);
 
-        HAL_GPIO_WritePin(SW_IN_S0_2_GPIO_Port, SW_IN_S0_2_Pin, (adc_ch_idx & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S1_2_GPIO_Port, SW_IN_S1_2_Pin, (adc_ch_idx & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S2_2_GPIO_Port, SW_IN_S2_2_Pin, (adc_ch_idx & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S3_2_GPIO_Port, SW_IN_S3_2_Pin, (adc_ch_idx & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S0_2_GPIO_Port, SW_IN_S0_2_Pin, (adc_ch_idx & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S1_2_GPIO_Port, SW_IN_S1_2_Pin, (adc_ch_idx & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S2_2_GPIO_Port, SW_IN_S2_2_Pin, (adc_ch_idx & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S3_2_GPIO_Port, SW_IN_S3_2_Pin, (adc_ch_idx & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+      
+        gpio_write_pin_fast(SW_IN_EN_2_GPIO_Port, SW_IN_EN_2_Pin, GPIO_PIN_RESET);
     }
     else if (adc_ch < 48)
     {
 
         adc_ch_idx = 15 - adc_ch_idx;
 
-        HAL_GPIO_WritePin(SW_IN_EN_4_GPIO_Port, SW_IN_EN_4_Pin, GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S0_4_GPIO_Port, SW_IN_S0_4_Pin, (adc_ch_idx & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S1_4_GPIO_Port, SW_IN_S1_4_Pin, (adc_ch_idx & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S2_4_GPIO_Port, SW_IN_S2_4_Pin, (adc_ch_idx & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S3_4_GPIO_Port, SW_IN_S3_4_Pin, (adc_ch_idx & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
-        HAL_GPIO_WritePin(SW_IN_S0_4_GPIO_Port, SW_IN_S0_4_Pin, (adc_ch_idx & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S1_4_GPIO_Port, SW_IN_S1_4_Pin, (adc_ch_idx & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S2_4_GPIO_Port, SW_IN_S2_4_Pin, (adc_ch_idx & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S3_4_GPIO_Port, SW_IN_S3_4_Pin, (adc_ch_idx & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_EN_4_GPIO_Port, SW_IN_EN_4_Pin, GPIO_PIN_RESET);
     }
     else if (adc_ch < 64)
     {
 
         adc_ch_idx = 15 - adc_ch_idx;
-        HAL_GPIO_WritePin(SW_IN_EN_3_GPIO_Port, SW_IN_EN_3_Pin, GPIO_PIN_RESET);
 
-        HAL_GPIO_WritePin(SW_IN_S0_3_GPIO_Port, SW_IN_S0_3_Pin, (adc_ch_idx & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S1_3_GPIO_Port, SW_IN_S1_3_Pin, (adc_ch_idx & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S2_3_GPIO_Port, SW_IN_S2_3_Pin, (adc_ch_idx & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(SW_IN_S3_3_GPIO_Port, SW_IN_S3_3_Pin, (adc_ch_idx & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S0_3_GPIO_Port, SW_IN_S0_3_Pin, (adc_ch_idx & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S1_3_GPIO_Port, SW_IN_S1_3_Pin, (adc_ch_idx & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S2_3_GPIO_Port, SW_IN_S2_3_Pin, (adc_ch_idx & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        gpio_write_pin_fast(SW_IN_S3_3_GPIO_Port, SW_IN_S3_3_Pin, (adc_ch_idx & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+
+        gpio_write_pin_fast(SW_IN_EN_3_GPIO_Port, SW_IN_EN_3_Pin, GPIO_PIN_RESET);
     }
 }

@@ -235,6 +235,10 @@ void Error_Handler(void);
 #define KEY_GPIO_Port GPIOD
 #define LED_Pin GPIO_PIN_7
 #define LED_GPIO_Port GPIOD
+#define TEST1_Pin GPIO_PIN_9
+#define TEST1_GPIO_Port GPIOG
+#define TEST2_Pin GPIO_PIN_10
+#define TEST2_GPIO_Port GPIOG
 #define FOR_TEST2_Pin GPIO_PIN_3
 #define FOR_TEST2_GPIO_Port GPIOB
 #define FOR_TEST1_Pin GPIO_PIN_4
