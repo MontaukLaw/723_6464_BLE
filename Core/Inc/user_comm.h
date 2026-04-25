@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "led.h"
+#include "test.h"
 
 #define STANDARD_PROTOCAL_LEN UART_RX_BUF_LEN
 #define UART_RX_BUF_LEN 50
@@ -42,6 +43,6 @@ typedef struct
 #define FRAME_TAIL_LEN 4
 #define FRAME_LEN (TOTAL_POINTS + FRAME_TAIL_LEN)
 
-#define ZERO_VAL  45
+#define ZERO_VAL  10 
 
 #endif

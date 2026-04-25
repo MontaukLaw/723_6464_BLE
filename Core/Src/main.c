@@ -130,12 +130,15 @@ int main(void)
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
+
     while (1)
     {
-        
-        comm_handler();
-       
+
+        // comm_handler();
+        // led_task();
         main_task_adc_first();
+
+        // test_task();
 
         // uart_test();
         /* USER CODE END WHILE */

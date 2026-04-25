@@ -40,7 +40,7 @@ void start_adc_dma(void)
     adc_dma_disable_transfer_irqs();
 }
 
-static HAL_StatusTypeDef uart_send(void)
+HAL_StatusTypeDef uart_send(void)
 {
     HAL_StatusTypeDef status;
 
@@ -72,7 +72,7 @@ static void frame_copy_to_tx_buf(void)
     }
 }
 
-static void frame_submit_async(void)
+void frame_submit_async(void)
 {
     uart_wait_tx_done();
     frame_copy_to_tx_buf();
@@ -203,28 +203,55 @@ static void change_point_idx(void)
     }
 }
 
+const uint16_t wave_idx[INPUT_CH_NUMBER] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                                           16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+                                           63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48,
+                                           47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32};
+
+const uint16_t adc_shift_idx[ADC_CHANNEL_NUMBER] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                                                   16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+                                                   63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48,
+                                                   47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32};
+
 void main_task_adc_first(void)
 {
     uint16_t input_idx = 0;
     uint16_t adc_idx = 0;
     uint16_t point_nmb = 0;
 
-    HAL_GPIO_WritePin(TEST2_GPIO_Port, TEST2_Pin, GPIO_PIN_SET);
+    memset((void *)points_data, 0, FRAME_LEN);
+    init_frame_tail();
+
     for (input_idx = 0; input_idx < INPUT_CH_NUMBER; input_idx++)
     {
         // 打开通道
+        // set_channel_pin(wave_idx[input_idx], GPIO_PIN_SET);
+
         set_channel_pin(input_idx, GPIO_PIN_SET);
 
         for (adc_idx = 0; adc_idx < ADC_CHANNEL_NUMBER; adc_idx++)
         {
+            // if (adc_idx >= 16)
+                // continue;
+
+            // if (adc_idx < 16 || adc_idx >= 32)
+            //     continue;
+
+            // if (adc_idx < 32 || adc_idx >= 48)
+            //     continue;
+
+            // if (adc_idx < 48)
+            //     continue;
 
             point_nmb = input_idx * ADC_CHANNEL_NUMBER + adc_idx;
 
             // 切换adc通道
-            set_adc_ch(adc_idx);
+            set_adc_ch(adc_shift_idx[adc_idx]);
 
             // 1.6us可以做10次adc了
             delay_ns(ADC_SETTLE_NS);
+            // delay_ns(2000);
+            // points_data[point_nmb] = adc_dma_buffer[2];
 
             // 取最大值
             uint16_t adc_max = 0;
@@ -235,6 +262,7 @@ void main_task_adc_first(void)
                     adc_max = adc_dma_buffer[i];
                 }
             }
+            points_data[point_nmb] = (uint8_t)adc_max;
 
             if (adc_max <= ZERO_VAL)
             {
@@ -245,14 +273,13 @@ void main_task_adc_first(void)
                 points_data[point_nmb] = (uint8_t)(adc_max - ZERO_VAL);
             }
 
-            point_nmb++;
+            // point_nmb++;
         }
 
         // 关闭通道
+        // set_channel_pin(wave_idx[input_idx], GPIO_PIN_RESET);
         set_channel_pin(input_idx, GPIO_PIN_RESET);
     }
-    
-    HAL_GPIO_WritePin(TEST2_GPIO_Port, TEST2_Pin, GPIO_PIN_RESET);
 
     // 发送数据
     frame_submit_async();
