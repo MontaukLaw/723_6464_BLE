@@ -248,10 +248,8 @@ void main_task_adc_first(void)
             // 切换adc通道
             set_adc_ch(adc_shift_idx[adc_idx]);
 
-            // 1.6us可以做10次adc了
+            // ADC_SETTLE_NS是650ns
             delay_ns(ADC_SETTLE_NS);
-            // delay_ns(2000);
-            // points_data[point_nmb] = adc_dma_buffer[2];
 
             // 取最大值
             uint16_t adc_max = 0;
@@ -264,14 +262,14 @@ void main_task_adc_first(void)
             }
             points_data[point_nmb] = (uint8_t)adc_max;
 
-            if (adc_max <= ZERO_VAL)
-            {
-                points_data[point_nmb] = 0;
-            }
-            else
-            {
-                points_data[point_nmb] = (uint8_t)(adc_max - ZERO_VAL);
-            }
+            // if (adc_max <= ZERO_VAL)
+            // {
+            //     points_data[point_nmb] = 0;
+            // }
+            // else
+            // {
+            //     points_data[point_nmb] = (uint8_t)(adc_max - ZERO_VAL);
+            // }
 
             // point_nmb++;
         }
